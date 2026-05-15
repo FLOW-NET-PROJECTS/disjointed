@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "qvvlCDjyUJdndRZxkHqWA"
+uri = "file://artifacts/disjointed/src/assets/flower.png"
+type = "image"
+title = "Cannabis flower buds"
+
+[[generated]]
+id = "26HD6OkFcJ8H7jXJRr1OG"
+uri = "file://artifacts/disjointed/src/assets/preroll.png"
+type = "image"
+title = "Cannabis pre-rolls"
+
+[[generated]]
+id = "K6tUjBxP9NOPrK3op4QlU"
+uri = "file://artifacts/disjointed/src/assets/edibles.png"
+type = "image"
+title = "Cannabis edibles gummies"
