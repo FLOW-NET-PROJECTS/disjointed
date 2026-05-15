@@ -6,9 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { OrderItemInput } from './orderItemInput';
+import type { PushSubscriptionInput } from './pushSubscriptionInput';
 
 export interface OrderInput {
   customerName?: string;
   customerNote?: string;
   items: OrderItemInput[];
+  customerPushSubscription?: PushSubscriptionInput;
 }

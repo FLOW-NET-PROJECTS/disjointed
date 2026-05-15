@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Trash2, ShoppingBag, ChevronLeft } from "lucide-react";
-import { useCreateOrder } from "@workspace/api-client-react";
+import { Trash2, ShoppingBag, ChevronLeft, Bell } from "lucide-react";
+import { useCreateOrder, useGetVapidPublicKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +9,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 import { Separator } from "@/components/ui/separator";
 
 export default function Cart() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { items, updateQuantity, removeItem, getCartTotal, getOrderItems, clearCart } = useCart();
-  
+  const { status: pushStatus, requestAndSubscribe } = usePushNotifications();
+  const { data: vapidData } = useGetVapidPublicKey();
+
   const [customerName, setCustomerName] = useState("");
   const [customerNote, setCustomerNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,19 +39,33 @@ export default function Cart() {
     }
 
     setIsSubmitting(true);
+
+    let customerPushSubscription: any = undefined;
+    if (vapidData?.publicKey && pushStatus !== "denied" && pushStatus !== "unsupported") {
+      const sub = await requestAndSubscribe(vapidData.publicKey);
+      if (sub?.endpoint && sub?.keys) {
+        customerPushSubscription = {
+          endpoint: sub.endpoint,
+          expirationTime: sub.expirationTime ?? null,
+          keys: { p256dh: (sub.keys as any).p256dh, auth: (sub.keys as any).auth },
+        };
+      }
+    }
+
     try {
       const order = await createOrder.mutateAsync({
         data: {
           customerName,
           customerNote: customerNote || undefined,
-          items: getOrderItems()
+          items: getOrderItems(),
+          customerPushSubscription,
         }
       });
-      
+
       clearCart();
       toast({
-        title: "Order placed successfully!",
-        description: "We're preparing your items.",
+        title: "Order placed!",
+        description: "We'll notify you when your order is ready for pickup.",
       });
       setLocation(`/orders?id=${order.id}`);
     } catch (error) {
@@ -93,15 +110,13 @@ export default function Cart() {
       <div className="grid lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-card/30 border border-border/50 rounded-xl overflow-hidden">
-            {/* Header */}
             <div className="grid grid-cols-12 gap-4 p-4 border-b border-border/50 text-xs font-mono uppercase tracking-widest text-muted-foreground bg-muted/10 hidden md:grid">
               <div className="col-span-6">Product</div>
               <div className="col-span-2 text-center">Price</div>
               <div className="col-span-2 text-center">Qty</div>
               <div className="col-span-2 text-right">Total</div>
             </div>
-            
-            {/* Items */}
+
             <div className="divide-y divide-border/50">
               {items.map((item) => (
                 <div key={item.id} className="p-4 flex flex-col md:grid md:grid-cols-12 gap-4 items-center">
@@ -121,36 +136,32 @@ export default function Cart() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="col-span-2 font-mono text-sm w-full md:text-center flex justify-between md:block">
                     <span className="md:hidden text-muted-foreground">Price:</span>
                     R{item.price.toFixed(2)}
                   </div>
-                  
+
                   <div className="col-span-2 flex items-center justify-between md:justify-center w-full md:w-auto border border-border/50 rounded-md bg-background">
-                    <button 
+                    <button
                       className="px-2 py-1 text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                    >
-                      -
-                    </button>
+                    >-</button>
                     <span className="font-mono text-sm w-6 text-center">{item.quantity}</span>
-                    <button 
+                    <button
                       className="px-2 py-1 text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    >
-                      +
-                    </button>
+                    >+</button>
                   </div>
-                  
+
                   <div className="col-span-2 w-full flex items-center justify-between md:justify-end">
                     <div className="font-mono font-bold">
                       <span className="md:hidden text-muted-foreground text-sm font-normal mr-2">Total:</span>
                       R{(item.price * item.quantity).toFixed(2)}
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 md:ml-4"
                       onClick={() => removeItem(item.id)}
                     >
@@ -161,7 +172,7 @@ export default function Cart() {
               ))}
             </div>
           </div>
-          
+
           <div className="flex justify-between items-center">
             <Link href="/">
               <Button variant="outline" className="font-mono text-xs uppercase tracking-widest">
@@ -177,7 +188,7 @@ export default function Cart() {
         <div className="lg:col-span-1">
           <div className="bg-card/50 border border-border/50 rounded-xl p-6 sticky top-24 shadow-lg shadow-black/20">
             <h3 className="font-bold text-lg mb-4 uppercase tracking-wider">Order Summary</h3>
-            
+
             <div className="space-y-3 font-mono text-sm mb-6">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal</span>
@@ -197,33 +208,44 @@ export default function Cart() {
             <form onSubmit={handleCheckout} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Pickup Name *</Label>
-                <Input 
-                  id="name" 
+                <Input
+                  id="name"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Enter name for pickup" 
+                  placeholder="Enter name for pickup"
                   className="bg-background/50 border-border font-mono placeholder:text-muted-foreground/30 focus-visible:ring-primary"
                   required
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="note" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Order Notes (Optional)</Label>
-                <Textarea 
-                  id="note" 
+                <Textarea
+                  id="note"
                   value={customerNote}
                   onChange={(e) => setCustomerNote(e.target.value)}
-                  placeholder="Any special instructions?" 
+                  placeholder="Any special instructions?"
                   className="bg-background/50 border-border font-mono placeholder:text-muted-foreground/30 min-h-24 resize-none focus-visible:ring-primary"
                 />
               </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full mt-6 h-12 font-mono uppercase tracking-widest font-bold" 
+
+              {pushStatus !== "denied" && pushStatus !== "unsupported" && (
+                <div className="flex items-start gap-3 bg-primary/5 border border-primary/20 rounded-lg p-3">
+                  <Bell className="w-4 h-4 text-primary/70 mt-0.5 shrink-0" />
+                  <p className="text-xs text-muted-foreground font-mono leading-relaxed">
+                    {pushStatus === "subscribed"
+                      ? "You'll get a notification when your order is ready."
+                      : "Allow notifications so we can ping you when your order is ready for pickup."}
+                  </p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full mt-6 h-12 font-mono uppercase tracking-widest font-bold"
                 disabled={isSubmitting || items.length === 0 || !customerName.trim()}
               >
-                {isSubmitting ? "Processing..." : "Place Order"}
+                {isSubmitting ? "Placing order..." : "Place Order"}
               </Button>
               <p className="text-[10px] text-muted-foreground text-center font-mono mt-4 uppercase tracking-wider opacity-70">
                 Pay in-store upon pickup

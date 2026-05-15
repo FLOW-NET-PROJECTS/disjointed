@@ -76,10 +76,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               &copy; {new Date().getFullYear()} DISJOINTED LIFESTYLE. All rights reserved.
             </p>
           </div>
-          <Link href="/admin" className="text-xs text-muted-foreground flex items-center gap-2 hover:text-primary transition-colors p-2">
-            <ShieldAlert className="h-3 w-3" />
-            Admin Portal
-          </Link>
         </div>
       </footer>
     </div>

@@ -33,3 +33,10 @@ externalPort = 3000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+VAPID_PUBLIC_KEY = "BEYhFv447Vc9X0cbkzUvCv1HjK1YtuQF0carsQ3fE5Uk5siPUGlQrflMM_8sNHOCRuXqiVXVjoWyNFzxSmVvpjM"
+VAPID_PRIVATE_KEY = "NuICXvyDIlrE_XyEM0l7r58ECuHDpGUHJaXMReWLXu8"
+VAPID_SUBJECT = "mailto:admin@disjointed.app"

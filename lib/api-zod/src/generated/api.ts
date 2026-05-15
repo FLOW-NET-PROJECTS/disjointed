@@ -219,7 +219,15 @@ export const CreateOrderBody = zod.object({
   "items": zod.array(zod.object({
   "productId": zod.number(),
   "quantity": zod.number().min(1)
-}))
+})),
+  "customerPushSubscription": zod.object({
+  "endpoint": zod.string(),
+  "expirationTime": zod.number().nullish(),
+  "keys": zod.object({
+  "p256dh": zod.string(),
+  "auth": zod.string()
+})
+}).optional()
 })
 
 
@@ -285,6 +293,27 @@ export const GetOrderStatsResponse = zod.object({
   "totalRevenue": zod.number(),
   "todayOrders": zod.number(),
   "todayRevenue": zod.number()
+})
+
+
+/**
+ * @summary Get the VAPID public key for push subscriptions
+ */
+export const GetVapidPublicKeyResponse = zod.object({
+  "publicKey": zod.string()
+})
+
+
+/**
+ * @summary Register admin push subscription
+ */
+export const SubscribeAdminBody = zod.object({
+  "endpoint": zod.string(),
+  "expirationTime": zod.number().nullish(),
+  "keys": zod.object({
+  "p256dh": zod.string(),
+  "auth": zod.string()
+})
 })
 
 

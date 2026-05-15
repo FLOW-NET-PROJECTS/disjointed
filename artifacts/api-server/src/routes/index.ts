@@ -4,6 +4,7 @@ import categoriesRouter from "./categories";
 import productsRouter from "./products";
 import ordersRouter from "./orders";
 import uploadsRouter from "./uploads";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -12,5 +13,6 @@ router.use(categoriesRouter);
 router.use(productsRouter);
 router.use(ordersRouter);
 router.use(uploadsRouter);
+router.use(notificationsRouter);
 
 export default router;

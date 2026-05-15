@@ -23,3 +23,7 @@ export * from './product';
 export * from './productInput';
 export * from './productPatch';
 export * from './productStats';
+export * from './pushSubscriptionInput';
+export * from './pushSubscriptionKeys';
+export * from './subscribeAdmin201';
+export * from './vapidPublicKeyResponse';

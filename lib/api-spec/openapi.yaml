@@ -17,6 +17,8 @@ tags:
     description: Product categories
   - name: uploads
     description: File uploads
+  - name: notifications
+    description: Push notification subscriptions
 
 paths:
   /healthz:
@@ -295,6 +297,42 @@ paths:
               schema:
                 $ref: "#/components/schemas/OrderStats"
 
+  /notifications/vapid-public-key:
+    get:
+      operationId: getVapidPublicKey
+      tags: [notifications]
+      summary: Get the VAPID public key for push subscriptions
+      responses:
+        "200":
+          description: VAPID public key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VapidPublicKeyResponse"
+
+  /notifications/subscribe-admin:
+    post:
+      operationId: subscribeAdmin
+      tags: [notifications]
+      summary: Register admin push subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscriptionInput"
+      responses:
+        "201":
+          description: Subscribed
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ok]
+                properties:
+                  ok:
+                    type: boolean
+
   /uploads/image:
     post:
       operationId: uploadImage
@@ -491,6 +529,33 @@ components:
         updatedAt:
           type: string
 
+    PushSubscriptionKeys:
+      type: object
+      required: [p256dh, auth]
+      properties:
+        p256dh:
+          type: string
+        auth:
+          type: string
+
+    PushSubscriptionInput:
+      type: object
+      required: [endpoint, keys]
+      properties:
+        endpoint:
+          type: string
+        expirationTime:
+          type: ["number", "null"]
+        keys:
+          $ref: "#/components/schemas/PushSubscriptionKeys"
+
+    VapidPublicKeyResponse:
+      type: object
+      required: [publicKey]
+      properties:
+        publicKey:
+          type: string
+
     OrderInput:
       type: object
       required: [items]
@@ -503,6 +568,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/OrderItemInput"
+        customerPushSubscription:
+          $ref: "#/components/schemas/PushSubscriptionInput"
 
     OrderPatch:
       type: object

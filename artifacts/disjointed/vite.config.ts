@@ -35,6 +35,9 @@ export default defineConfig({
     runtimeErrorOverlay(),
     VitePWA({
       registerType: "autoUpdate",
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "service-worker.ts",
       includeAssets: ["favicon.svg", "icon-512.jpg"],
       manifest: {
         name: "DISJOINTED",
@@ -60,9 +63,8 @@ export default defineConfig({
           },
         ],
       },
-      workbox: {
+      injectManifest: {
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff2}"],
-        navigateFallback: null,
       },
       devOptions: {
         enabled: false,

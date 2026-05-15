@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, sql } from "drizzle-orm";
-import { db, ordersTable, productsTable } from "@workspace/db";
+import { db, ordersTable, productsTable, pushSubscriptionsTable } from "@workspace/db";
 import {
   ListOrdersQueryParams,
   ListOrdersResponse,
@@ -12,6 +12,7 @@ import {
   UpdateOrderResponse,
   GetOrderStatsResponse,
 } from "@workspace/api-zod";
+import { sendPush } from "../lib/push";
 
 const router: IRouter = Router();
 
@@ -72,9 +73,8 @@ router.post("/orders", async (req, res): Promise<void> => {
     return;
   }
 
-  const { items, customerName, customerNote } = parsed.data;
+  const { items, customerName, customerNote, customerPushSubscription } = parsed.data;
 
-  // Validate stock and fetch product info
   const productIds = items.map((i) => i.productId);
   const products = await db
     .select()
@@ -83,7 +83,6 @@ router.post("/orders", async (req, res): Promise<void> => {
 
   const productMap = new Map(products.map((p) => [p.id, p]));
 
-  // Check availability and stock
   for (const item of items) {
     const product = productMap.get(item.productId);
     if (!product) {
@@ -102,7 +101,6 @@ router.post("/orders", async (req, res): Promise<void> => {
     }
   }
 
-  // Build order items with current prices
   const orderItems = items.map((item) => {
     const product = productMap.get(item.productId)!;
     return {
@@ -115,7 +113,6 @@ router.post("/orders", async (req, res): Promise<void> => {
 
   const total = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
 
-  // Insert order
   const [order] = await db
     .insert(ordersTable)
     .values({
@@ -124,10 +121,10 @@ router.post("/orders", async (req, res): Promise<void> => {
       status: "pending",
       total: String(total),
       items: orderItems,
+      customerPushSubscription: customerPushSubscription ?? null,
     })
     .returning();
 
-  // Decrement stock for each item — real stock control
   for (const item of items) {
     const product = productMap.get(item.productId)!;
     const newStock = product.stock - item.quantity;
@@ -135,10 +132,23 @@ router.post("/orders", async (req, res): Promise<void> => {
       .update(productsTable)
       .set({
         stock: newStock,
-        // Auto-mark unavailable when stock hits zero
         available: newStock > 0 ? product.available : false,
       })
       .where(eq(productsTable.id, item.productId));
+  }
+
+  // Notify all admin push subscribers of the new order
+  const adminSubs = await db.select().from(pushSubscriptionsTable);
+  for (const sub of adminSubs) {
+    await sendPush(
+      { endpoint: sub.endpoint, keys: sub.keys },
+      {
+        title: "New Order",
+        body: `Order #${order.id} from ${customerName ?? "Guest"} — R${total.toFixed(2)}`,
+        tag: `order-${order.id}`,
+        url: "/admin/orders",
+      },
+    );
   }
 
   res.status(201).json(GetOrderResponse.parse({
@@ -196,6 +206,16 @@ router.patch("/orders/:id", async (req, res): Promise<void> => {
   if (!updated) {
     res.status(404).json({ error: "Order not found" });
     return;
+  }
+
+  // If marked ready, notify the customer
+  if (parsed.data.status === "ready" && updated.customerPushSubscription) {
+    await sendPush(updated.customerPushSubscription, {
+      title: "Your order is ready!",
+      body: `Order #${updated.id} is ready for pickup. Head to the counter to collect and pay.`,
+      tag: `ready-${updated.id}`,
+      url: `/orders?id=${updated.id}`,
+    });
   }
 
   res.json(UpdateOrderResponse.parse({

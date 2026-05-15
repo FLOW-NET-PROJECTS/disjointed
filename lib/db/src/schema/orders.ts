@@ -14,6 +14,11 @@ export const ordersTable = pgTable("orders", {
     quantity: number;
     price: number;
   }>>(),
+  customerPushSubscription: jsonb("customer_push_subscription").$type<{
+    endpoint: string;
+    expirationTime?: number | null;
+    keys: { p256dh: string; auth: string };
+  } | null>(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

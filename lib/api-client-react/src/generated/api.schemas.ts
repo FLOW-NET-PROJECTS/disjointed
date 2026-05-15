@@ -110,10 +110,27 @@ export interface Order {
   updatedAt?: string;
 }
 
+export interface PushSubscriptionKeys {
+  p256dh: string;
+  auth: string;
+}
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  /** @nullable */
+  expirationTime?: number | null;
+  keys: PushSubscriptionKeys;
+}
+
+export interface VapidPublicKeyResponse {
+  publicKey: string;
+}
+
 export interface OrderInput {
   customerName?: string;
   customerNote?: string;
   items: OrderItemInput[];
+  customerPushSubscription?: PushSubscriptionInput;
 }
 
 export interface OrderPatch {
@@ -145,5 +162,9 @@ available?: boolean;
 
 export type ListOrdersParams = {
 status?: string;
+};
+
+export type SubscribeAdmin201 = {
+  ok: boolean;
 };
 
