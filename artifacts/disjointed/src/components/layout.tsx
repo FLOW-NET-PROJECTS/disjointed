@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { ShoppingBag, Menu, X, ShieldAlert } from "lucide-react";
+import { ShoppingBag, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useManifest } from "@/hooks/use-manifest";
+import { SmokeBg } from "@/components/smoke-bg";
 import logoUrl from "@assets/1000377908_1778876362934.jpg";
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -16,34 +17,54 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const closeMenu = () => setIsMobileMenuOpen(false);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/30">
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/30 relative">
+      <SmokeBg />
+
+      <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleMenu}>
-              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            <Button variant="ghost" size="icon" className="md:hidden text-foreground/70 hover:text-foreground" onClick={toggleMenu}>
+              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
             <Link href="/" className="flex items-center gap-3 group" onClick={closeMenu}>
-              <div className="h-10 w-10 overflow-hidden rounded-full border border-border/50 group-hover:border-primary/50 transition-colors">
+              <div className="h-9 w-9 overflow-hidden rounded-full border border-primary/30 group-hover:border-primary/70 transition-all duration-300 shadow-[0_0_12px_-2px_rgba(74,140,63,0.3)] group-hover:shadow-[0_0_18px_-2px_rgba(74,140,63,0.5)]">
                 <img src={logoUrl} alt="DISJOINTED Logo" className="h-full w-full object-cover" />
               </div>
               <div className="flex flex-col">
-                <span className="font-sans font-bold tracking-widest text-lg leading-tight group-hover:text-primary transition-colors">DISJOINTED</span>
-                <span className="text-[0.65rem] tracking-[0.2em] text-muted-foreground uppercase leading-none">—LIFESTYLE—</span>
+                <span className="font-sans font-bold tracking-[0.18em] text-base leading-tight group-hover:text-primary transition-colors duration-300">DISJOINTED</span>
+                <span className="text-[0.55rem] tracking-[0.25em] text-primary/50 uppercase leading-none font-mono">LIFESTYLE</span>
               </div>
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <Link href="/" className={`transition-colors hover:text-primary ${location === '/' ? 'text-primary' : 'text-foreground/80'}`}>Shop</Link>
-            <Link href="/orders" className={`transition-colors hover:text-primary ${location.startsWith('/orders') ? 'text-primary' : 'text-foreground/80'}`}>Orders</Link>
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <Link
+              href="/"
+              className={`transition-all duration-200 tracking-wide hover:text-primary relative after:absolute after:bottom-[-2px] after:left-0 after:h-px after:bg-primary after:transition-all after:duration-300 ${
+                location === "/" ? "text-primary after:w-full" : "text-foreground/60 after:w-0 hover:after:w-full"
+              }`}
+            >
+              Shop
+            </Link>
+            <Link
+              href="/orders"
+              className={`transition-all duration-200 tracking-wide hover:text-primary relative after:absolute after:bottom-[-2px] after:left-0 after:h-px after:bg-primary after:transition-all after:duration-300 ${
+                location.startsWith("/orders") ? "text-primary after:w-full" : "text-foreground/60 after:w-0 hover:after:w-full"
+              }`}
+            >
+              Orders
+            </Link>
           </nav>
 
-          <div className="flex items-center gap-4">
-            <Link href="/cart" className="relative group p-2">
-              <ShoppingBag className={`h-6 w-6 transition-colors group-hover:text-primary ${location === '/cart' ? 'text-primary' : 'text-foreground/80'}`} />
+          <div className="flex items-center gap-3">
+            <Link href="/cart" className="relative group p-2 rounded-lg hover:bg-white/5 transition-colors">
+              <ShoppingBag
+                className={`h-5 w-5 transition-colors group-hover:text-primary ${
+                  location === "/cart" ? "text-primary" : "text-foreground/70"
+                }`}
+              />
               {cartItemsCount > 0 && (
-                <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground">
+                <span className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-primary text-[9px] font-bold flex items-center justify-center text-primary-foreground shadow-[0_0_8px_rgba(74,140,63,0.6)]">
                   {cartItemsCount}
                 </span>
               )}
@@ -51,31 +72,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* Mobile menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-b border-border/40 bg-background absolute top-16 left-0 w-full animate-in slide-in-from-top-2">
-            <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
-              <Link href="/" className="text-lg font-medium p-2 hover:bg-muted/50 rounded-md" onClick={closeMenu}>Shop</Link>
-              <Link href="/orders" className="text-lg font-medium p-2 hover:bg-muted/50 rounded-md" onClick={closeMenu}>Orders</Link>
+          <div className="md:hidden border-t border-white/5 bg-background/95 backdrop-blur-xl absolute top-16 left-0 w-full animate-in slide-in-from-top-2 duration-200">
+            <div className="container mx-auto px-4 py-5 flex flex-col gap-1">
+              <Link
+                href="/"
+                className={`text-sm font-medium px-3 py-2.5 rounded-lg transition-colors ${location === "/" ? "text-primary bg-primary/10" : "text-foreground/70 hover:bg-white/5 hover:text-foreground"}`}
+                onClick={closeMenu}
+              >
+                Shop
+              </Link>
+              <Link
+                href="/orders"
+                className={`text-sm font-medium px-3 py-2.5 rounded-lg transition-colors ${location.startsWith("/orders") ? "text-primary bg-primary/10" : "text-foreground/70 hover:bg-white/5 hover:text-foreground"}`}
+                onClick={closeMenu}
+              >
+                Orders
+              </Link>
             </div>
           </div>
         )}
       </header>
 
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
+      <main className="relative z-10 flex-1 container mx-auto px-4 py-8 max-w-7xl">
         {children}
       </main>
 
-      <footer className="border-t border-border/40 bg-card/50 py-8 mt-12">
+      <footer className="relative z-10 border-t border-white/5 bg-background/60 backdrop-blur-sm py-8 mt-16">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-3 opacity-50 hover:opacity-100 transition-opacity">
-             <div className="h-8 w-8 overflow-hidden rounded-full border border-border">
-                <img src={logoUrl} alt="DISJOINTED Logo" className="h-full w-full object-cover grayscale" />
-              </div>
-            <p className="text-xs text-muted-foreground font-mono">
-              &copy; {new Date().getFullYear()} DISJOINTED LIFESTYLE. All rights reserved.
+          <div className="flex items-center gap-3">
+            <div className="h-7 w-7 overflow-hidden rounded-full border border-border/30 opacity-50">
+              <img src={logoUrl} alt="DISJOINTED Logo" className="h-full w-full object-cover grayscale" />
+            </div>
+            <p className="text-xs text-muted-foreground/50 font-mono tracking-wide">
+              &copy; {new Date().getFullYear()} DISJOINTED LIFESTYLE
             </p>
           </div>
+          <p className="text-[10px] text-muted-foreground/30 font-mono tracking-widest uppercase">
+            For adults 18+ only — consume responsibly
+          </p>
         </div>
       </footer>
     </div>
