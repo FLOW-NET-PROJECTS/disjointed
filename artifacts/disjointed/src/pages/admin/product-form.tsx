@@ -20,6 +20,18 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+import flowerIcon from "@assets/flower.png";
+import prerollIcon from "@assets/preroll.png";
+import ediblesIcon from "@assets/edibles.png";
+
+const CATEGORY_ICONS: Record<string, string | React.ReactNode> = {
+  "Flower": <img src={flowerIcon} className="w-4 h-4 object-contain" alt="Flower" />,
+  "Pre-Rolls": <img src={prerollIcon} className="w-4 h-4 object-contain" alt="Pre-Rolls" />,
+  "Edibles": <img src={ediblesIcon} className="w-4 h-4 object-contain" alt="Edibles" />,
+  "Concentrates": "💎",
+  "CBD": "💧",
+};
+
 export default function AdminProductForm() {
   const params = useParams();
   const isEditing = !!params.id && params.id !== "new";
@@ -201,8 +213,13 @@ export default function AdminProductForm() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No Category</SelectItem>
-                      {categories?.map(cat => (
-                        <SelectItem key={cat.id} value={cat.id.toString()}>{cat.name}</SelectItem>
+                      {categories?.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <span>{CATEGORY_ICONS[cat.name] ?? "🌿"}</span>
+                            <span>{cat.name}</span>
+                          </div>
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

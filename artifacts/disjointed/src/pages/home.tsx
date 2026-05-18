@@ -1,19 +1,26 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useListProducts, useListCategories } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { ProductCard } from "@/components/product-card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
-const CATEGORY_ICONS: Record<string, string> = {
-  "Flower": "🌿",
-  "Pre-Rolls": "🚬",
-  "Edibles": "🍫",
+import flowerIcon from "@assets/flower.png";
+import prerollIcon from "@assets/preroll.png";
+import ediblesIcon from "@assets/edibles.png";
+
+const CATEGORY_ICONS: Record<string, string | React.ReactNode> = {
+  "Flower": <img src={flowerIcon} className="w-5 h-5 object-contain" alt="Flower" />,
+  "Pre-Rolls": <img src={prerollIcon} className="w-5 h-5 object-contain" alt="Pre-Rolls" />,
+  "Edibles": <img src={ediblesIcon} className="w-5 h-5 object-contain" alt="Edibles" />,
   "Concentrates": "💎",
   "CBD": "💧",
 };
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: products, isLoading: loadingProducts } = useListProducts({
     available: true,
@@ -21,6 +28,18 @@ export default function Home() {
   });
 
   const { data: categories, isLoading: loadingCategories } = useListCategories();
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    if (!searchQuery.trim()) return products;
+    
+    const query = searchQuery.toLowerCase();
+    return products.filter(p => 
+      p.name.toLowerCase().includes(query) || 
+      (p.description && p.description.toLowerCase().includes(query)) ||
+      (p.strain && p.strain.toLowerCase().includes(query))
+    );
+  }, [products, searchQuery]);
 
   return (
     <Layout>
@@ -51,9 +70,33 @@ export default function Home() {
           </div>
           <div className="w-px bg-border/30" />
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary">{products?.length ?? "—"}</div>
+            <div className="text-2xl font-bold text-primary">{filteredProducts.length ?? "—"}</div>
             <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 mt-0.5">Products</div>
           </div>
+        </div>
+
+        <div className="mt-12 max-w-md mx-auto relative group animate-in fade-in duration-700 delay-300">
+          <div className="absolute inset-0 bg-primary/5 rounded-2xl blur-xl group-hover:bg-primary/10 transition-all duration-500" />
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Input
+              type="text"
+              placeholder="Search flower, edibles, strains..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-14 pl-11 pr-4 bg-background/50 border-white/10 rounded-2xl focus:border-primary/50 focus:ring-primary/20 font-mono text-sm transition-all shadow-lg"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
           <div className="w-px bg-border/30" />
           <div className="text-center">
             <div className="text-2xl font-bold text-primary">100%</div>
@@ -111,15 +154,29 @@ export default function Home() {
 
         {/* Product Grid */}
         <div className="flex-1 min-w-0">
-          {selectedCategory && (
-            <div className="mb-5 flex items-center gap-3">
-              <span className="text-lg">{CATEGORY_ICONS[selectedCategory] ?? "🌿"}</span>
-              <h2 className="text-lg font-bold tracking-tight">{selectedCategory}</h2>
+          {(selectedCategory || searchQuery) && (
+            <div className="mb-5 flex items-center gap-3 animate-in fade-in slide-in-from-left-4 duration-300">
+              {selectedCategory && (
+                <>
+                  <span className="text-lg">{CATEGORY_ICONS[selectedCategory] ?? "🌿"}</span>
+                  <h2 className="text-lg font-bold tracking-tight">{selectedCategory}</h2>
+                </>
+              )}
+              {selectedCategory && searchQuery && <span className="text-muted-foreground/30">•</span>}
+              {searchQuery && (
+                <div className="flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-lg">
+                  <Search className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-sm font-mono text-muted-foreground">"{searchQuery}"</span>
+                </div>
+              )}
               <button
-                onClick={() => setSelectedCategory(null)}
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setSearchQuery("");
+                }}
                 className="ml-auto text-xs font-mono text-muted-foreground/50 hover:text-primary transition-colors"
               >
-                Clear ×
+                Clear all ×
               </button>
             </div>
           )}
@@ -135,9 +192,9 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          ) : products && products.length > 0 ? (
+          ) : filteredProducts && filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {products.map((product, i) => (
+              {filteredProducts.map((product, i) => (
                 <div
                   key={product.id}
                   className="animate-in fade-in slide-in-from-bottom-5 duration-500 fill-mode-both"
@@ -151,12 +208,15 @@ export default function Home() {
             <div className="h-64 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
               <span className="text-3xl mb-3">🌿</span>
               <p className="text-muted-foreground/50 font-mono text-sm">Nothing here yet.</p>
-              {selectedCategory && (
+              {(selectedCategory || searchQuery) && (
                 <button
-                  onClick={() => setSelectedCategory(null)}
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setSearchQuery("");
+                  }}
                   className="text-primary mt-3 text-xs hover:underline font-mono"
                 >
-                  Clear filter
+                  Clear all filters
                 </button>
               )}
             </div>

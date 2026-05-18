@@ -22,6 +22,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+import flowerIcon from "@assets/flower.png";
+import prerollIcon from "@assets/preroll.png";
+import ediblesIcon from "@assets/edibles.png";
+
+const CATEGORY_ICONS: Record<string, string | React.ReactNode> = {
+  "Flower": <img src={flowerIcon} className="w-4 h-4 object-contain" alt="Flower" />,
+  "Pre-Rolls": <img src={prerollIcon} className="w-4 h-4 object-contain" alt="Pre-Rolls" />,
+  "Edibles": <img src={ediblesIcon} className="w-4 h-4 object-contain" alt="Edibles" />,
+  "Concentrates": "💎",
+  "CBD": "💧",
+};
+
 export default function AdminProducts() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -138,7 +150,12 @@ export default function AdminProducts() {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex flex-col gap-1">
-                          <span className="font-medium text-xs">{product.category || "Uncategorized"}</span>
+                          <div className="flex items-center gap-1.5">
+                            {product.category && (
+                              <span className="shrink-0">{CATEGORY_ICONS[product.category] ?? "🌿"}</span>
+                            )}
+                            <span className="font-medium text-xs">{product.category || "Uncategorized"}</span>
+                          </div>
                           {product.strain && (
                             <span className="text-[10px] font-mono uppercase text-muted-foreground">{product.strain}</span>
                           )}
