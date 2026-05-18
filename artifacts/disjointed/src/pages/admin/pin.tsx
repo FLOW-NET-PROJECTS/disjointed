@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { ShieldAlert, Delete } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import logoUrl from "@assets/1000377908_1778876362934.jpg";
+import logoUrl from "@attached-assets/1000377908_1778876362934.jpg";
 
 export default function AdminPin() {
   const [pin, setPin] = useState("");
