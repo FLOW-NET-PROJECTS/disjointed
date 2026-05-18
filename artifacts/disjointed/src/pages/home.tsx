@@ -97,13 +97,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-          <div className="w-px bg-border/30" />
-          <div className="text-center">
-            <div className="text-2xl font-bold text-primary">100%</div>
-            <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground/50 mt-0.5">Lab Tested</div>
-          </div>
-        </div>
-      </div>
 
       <div className="flex flex-col md:flex-row gap-8">
         {/* Category Sidebar */}
