@@ -32,7 +32,7 @@ export function usePushNotifications() {
       }
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey).buffer as ArrayBuffer,
       });
       setStatus("subscribed");
       return sub.toJSON();

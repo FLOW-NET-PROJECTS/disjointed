@@ -61,7 +61,7 @@ export default function AdminProductForm() {
   // Queries
   const { data: categories } = useListCategories();
   const { data: product, isLoading: loadingProduct } = useGetProduct(productId, {
-    query: { enabled: isEditing }
+    query: { enabled: isEditing, queryKey: ["getProduct", productId] }
   });
 
   // Mutations
@@ -75,12 +75,12 @@ export default function AdminProductForm() {
         name: product.name,
         description: product.description || "",
         price: product.price.toString(),
-        thcLevel: product.thcLevel !== null ? product.thcLevel.toString() : "",
-        cbdLevel: product.cbdLevel !== null ? product.cbdLevel.toString() : "",
+        thcLevel: product.thcLevel != null ? product.thcLevel.toString() : "",
+        cbdLevel: product.cbdLevel != null ? product.cbdLevel.toString() : "",
         strain: product.strain || "",
         weight: product.weight || "",
         categoryId: product.categoryId ? product.categoryId.toString() : "none",
-        stock: product.stock !== null ? product.stock.toString() : "",
+        stock: product.stock != null ? product.stock.toString() : "",
         available: product.available,
         imageUrl: product.imageUrl || ""
       });

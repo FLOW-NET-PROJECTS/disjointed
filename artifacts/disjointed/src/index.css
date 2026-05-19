@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
@@ -109,10 +111,10 @@
   --input: 224 21% 30%;
   --ring: 110 39% 47%;
 
-  --app-font-sans: 'Space Grotesk', 'Inter', sans-serif;
+  --app-font-sans: 'Outfit', 'Inter', sans-serif;
   --app-font-serif: Georgia, serif;
-  --app-font-mono: 'Space Mono', Menlo, monospace;
-  --radius: 0.25rem;
+  --app-font-mono: 'JetBrains Mono', 'Menlo', monospace;
+  --radius: 0.375rem;
 }
 
 .dark {

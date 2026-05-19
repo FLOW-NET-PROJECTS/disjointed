@@ -19,7 +19,7 @@ export default function Orders() {
   const [activeOrderId, setActiveOrderId] = useState<number | null>(initialOrderId ? parseInt(initialOrderId, 10) : null);
 
   const { data: order, isLoading, isError } = useGetOrder(activeOrderId!, {
-    query: { enabled: !!activeOrderId }
+    query: { enabled: !!activeOrderId, queryKey: ["getOrder", activeOrderId] }
   });
 
   const handleSearch = (e: React.FormEvent) => {

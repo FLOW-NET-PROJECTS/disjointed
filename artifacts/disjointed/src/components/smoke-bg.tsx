@@ -1,61 +1,113 @@
 import { useEffect, useRef } from "react";
 
-const WISPS = [
-  { left: "8%",  delay: 0,    duration: 3,    drift: "18px",  rot: "12deg",  opacity: 0.07, size: 260 },
-  { left: "22%", delay: 0.5,  duration: 3,    drift: "-14px", rot: "-8deg",  opacity: 0.06, size: 220 },
-  { left: "38%", delay: 1.1,  duration: 3,    drift: "22px",  rot: "16deg",  opacity: 0.08, size: 300 },
-  { left: "55%", delay: 0.3,  duration: 3,    drift: "-20px", rot: "-12deg", opacity: 0.07, size: 250 },
-  { left: "70%", delay: 1.6,  duration: 3,    drift: "16px",  rot: "10deg",  opacity: 0.06, size: 240 },
-  { left: "85%", delay: 0.8,  duration: 3,    drift: "-10px", rot: "-6deg",  opacity: 0.08, size: 280 },
-  { left: "15%", delay: 2.0,  duration: 3,    drift: "12px",  rot: "8deg",   opacity: 0.05, size: 200 },
-  { left: "48%", delay: 2.5,  duration: 3,    drift: "-18px", rot: "-14deg", opacity: 0.07, size: 270 },
-  { left: "62%", delay: 1.4,  duration: 3,    drift: "20px",  rot: "18deg",  opacity: 0.06, size: 230 },
-  { left: "78%", delay: 0.2,  duration: 3,    drift: "-22px", rot: "-10deg", opacity: 0.05, size: 210 },
-];
+const DURATION = 3; // seconds — seamless loop period
+
+interface Particle {
+  x: number;
+  y: number;
+  startY: number;
+  travelH: number;
+  vx: number;
+  radius: number;
+  maxAlpha: number;
+  phase: number; // 0..DURATION, staggered so first===last frame
+}
+
+function makeParticle(w: number, h: number, phase: number): Particle {
+  return {
+    x: Math.random() * w,
+    y: 0,
+    startY: h + 60 + Math.random() * 80,
+    travelH: h * 1.25 + 120,
+    vx: (Math.random() - 0.5) * 1.2,
+    radius: 90 + Math.random() * 130,
+    maxAlpha: 0.055 + Math.random() * 0.07,
+    phase,
+  };
+}
 
 export function SmokeBg() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let raf = 0;
+    let particles: Particle[] = [];
+    const COUNT = 20;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      // rebuild particles on resize so coverage stays consistent
+      particles = Array.from({ length: COUNT }, (_, i) =>
+        makeParticle(canvas.width, canvas.height, (i / COUNT) * DURATION)
+      );
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    let startTime = -1;
+
+    const draw = (ts: number) => {
+      if (startTime < 0) startTime = ts;
+      const elapsed = (ts - startTime) / 1000; // seconds
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const p of particles) {
+        // t goes 0→1 within this particle's personal DURATION window, wrapping
+        const t = ((elapsed + p.phase) % DURATION) / DURATION;
+
+        // smooth fade: sine envelope so first frame == last frame (no seam)
+        const fade = Math.sin(t * Math.PI);          // 0 at 0 & 1, peak at 0.5
+        const alpha = p.maxAlpha * fade;
+
+        if (alpha < 0.002) {
+          raf = requestAnimationFrame(draw);
+          continue;
+        }
+
+        // position: linear rise + gentle horizontal wobble
+        const py = p.startY - t * p.travelH;
+        const px = p.x + Math.sin(t * Math.PI * 2.5 + p.phase) * 18 * t + p.vx * t * 60;
+
+        const g = ctx.createRadialGradient(px, py, 0, px, py, p.radius);
+        g.addColorStop(0,   `rgba(74,140,63,${(alpha * 1.3).toFixed(4)})`);
+        g.addColorStop(0.45,`rgba(55,110,46,${(alpha * 0.55).toFixed(4)})`);
+        g.addColorStop(1,   `rgba(30,60,26,0)`);
+
+        ctx.beginPath();
+        ctx.arc(px, py, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = g;
+        ctx.fill();
+      }
+
+      raf = requestAnimationFrame(draw);
+    };
+
+    raf = requestAnimationFrame(draw);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
   return (
-    <div
+    <canvas
+      ref={canvasRef}
       aria-hidden="true"
       style={{
         position: "fixed",
         inset: 0,
         zIndex: 0,
         pointerEvents: "none",
-        overflow: "hidden",
+        width: "100%",
+        height: "100%",
       }}
-    >
-      {WISPS.map((w, i) => (
-        <div
-          key={i}
-          style={{
-            position: "absolute",
-            bottom: "-120px",
-            left: w.left,
-            width: `${w.size}px`,
-            height: `${w.size}px`,
-            borderRadius: "50%",
-            background:
-              "radial-gradient(ellipse at center, rgba(74,140,63,0.55) 0%, rgba(74,140,63,0.18) 45%, transparent 70%)",
-            filter: "blur(42px)",
-            willChange: "transform, opacity",
-            animation: `smoke-rise-${i} ${w.duration}s ${w.delay}s infinite linear`,
-          }}
-        />
-      ))}
-
-      <style>{`
-        ${WISPS.map(
-          (w, i) => `
-          @keyframes smoke-rise-${i} {
-            0%   { transform: translateY(0px) translateX(0px) scale(0.7) rotate(0deg); opacity: 0; }
-            12%  { opacity: ${w.opacity}; }
-            88%  { opacity: ${w.opacity}; }
-            100% { transform: translateY(-110vh) translateX(${w.drift}) scale(1.5) rotate(${w.rot}); opacity: 0; }
-          }
-        `
-        ).join("")}
-      `}</style>
-    </div>
+    />
   );
 }

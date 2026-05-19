@@ -34,7 +34,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const strainKey = product.strain?.toLowerCase() ?? "";
   const style = STRAIN_STYLES[strainKey] ?? DEFAULT_STYLE;
-  const outOfStock = !product.available || (product.stock !== null && product.stock <= 0);
+  const outOfStock = !product.available || (product.stock != null && product.stock <= 0);
 
   return (
     <Link href={`/product/${product.id}`} className="group block h-full">
@@ -118,7 +118,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 <span className="text-foreground/70">{product.weight}</span>
               </div>
             )}
-            {product.stock !== null && product.stock > 0 && product.stock <= 10 && (
+            {product.stock != null && product.stock > 0 && product.stock <= 10 && (
               <div className="ml-auto text-[10px] font-mono text-orange-400/70">
                 {product.stock} left
               </div>

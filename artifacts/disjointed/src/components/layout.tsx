@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { useManifest } from "@/hooks/use-manifest";
 import { SmokeBg } from "@/components/smoke-bg";
-import logoUrl from "@assets/1000377908_1778876362934.jpg";
+import logoUrl from "@assets/logo.jpg";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   useManifest("shop");

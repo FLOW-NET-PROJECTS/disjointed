@@ -17,7 +17,7 @@ export default function ProductDetail() {
   const { toast } = useToast();
 
   const { data: product, isLoading, isError } = useGetProduct(id, {
-    query: { enabled: !!id }
+    query: { enabled: !!id, queryKey: ["getProduct", id] }
   });
 
   const handleAddToCart = () => {
@@ -96,7 +96,7 @@ export default function ProductDetail() {
               <Leaf className="w-24 h-24 text-muted-foreground/30" />
             )}
             
-            {(!product.available || (product.stock !== null && product.stock <= 0)) && (
+            {(!product.available || (product.stock != null && product.stock <= 0)) && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
                 <Badge variant="destructive" className="font-mono text-lg uppercase tracking-widest px-6 py-2 border-2">Out of Stock</Badge>
               </div>
@@ -132,11 +132,11 @@ export default function ProductDetail() {
                 <span className="text-muted-foreground uppercase text-[10px] tracking-widest mb-1">CBD Level</span>
                 <span className="font-bold text-lg">{product.cbdLevel != null ? `${product.cbdLevel}%` : '0%'}</span>
               </div>
-              {product.stock !== null && (
+              {product.stock != null && (
                 <div className="flex flex-col col-span-2 pt-2 border-t border-border/50 mt-2">
                   <span className="text-muted-foreground uppercase text-[10px] tracking-widest mb-1">Availability</span>
-                  <span className={`${product.stock > 0 ? "text-primary" : "text-destructive"}`}>
-                    {product.stock > 0 ? `${product.stock} units in stock` : 'Out of stock'}
+                  <span className={`${(product.stock ?? 0) > 0 ? "text-primary" : "text-destructive"}`}>
+                    {(product.stock ?? 0) > 0 ? `${product.stock} units in stock` : 'Out of stock'}
                   </span>
                 </div>
               )}
@@ -151,7 +151,7 @@ export default function ProductDetail() {
                 <button 
                   className="px-4 text-muted-foreground hover:text-foreground h-full transition-colors"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  disabled={!product.available || (product.stock !== null && product.stock <= 0)}
+                  disabled={!product.available || (product.stock != null && product.stock <= 0)}
                 >
                   -
                 </button>
@@ -159,7 +159,7 @@ export default function ProductDetail() {
                 <button 
                   className="px-4 text-muted-foreground hover:text-foreground h-full transition-colors"
                   onClick={() => setQuantity(product.stock ? Math.min(product.stock, quantity + 1) : quantity + 1)}
-                  disabled={!product.available || (product.stock !== null && product.stock <= 0) || (product.stock !== null && quantity >= product.stock)}
+                  disabled={!product.available || (product.stock != null && product.stock <= 0) || (product.stock != null && quantity >= product.stock)}
                 >
                   +
                 </button>
@@ -169,7 +169,7 @@ export default function ProductDetail() {
                 className="flex-1 h-12 font-mono uppercase tracking-widest text-sm" 
                 size="lg"
                 onClick={handleAddToCart}
-                disabled={!product.available || (product.stock !== null && product.stock <= 0)}
+                disabled={!product.available || (product.stock != null && product.stock <= 0)}
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Add to Cart

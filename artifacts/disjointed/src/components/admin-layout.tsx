@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useManifest } from "@/hooks/use-manifest";
+import logoUrl from "@assets/logo.jpg";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
   useManifest("admin");
@@ -29,9 +30,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Sidebar */}
-      <aside className="w-full md:w-64 border-r border-border bg-card/30 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-border">
-          <Link href="/admin/dashboard" className="font-bold text-primary tracking-widest">
+      <aside className="w-full md:w-64 border-r border-border/40 bg-card/20 backdrop-blur-sm flex flex-col">
+        <div className="h-16 flex items-center px-5 border-b border-border/40 gap-3">
+          <div className="h-8 w-8 overflow-hidden rounded-full border border-primary/40 shadow-[0_0_10px_-2px_rgba(74,140,63,0.4)] shrink-0">
+            <img src={logoUrl} alt="DISJOINTED Logo" className="h-full w-full object-cover" />
+          </div>
+          <Link href="/admin/dashboard" className="font-bold text-primary tracking-widest text-sm">
             DISJOINTED<span className="text-muted-foreground font-normal"> / ADMIN</span>
           </Link>
         </div>
