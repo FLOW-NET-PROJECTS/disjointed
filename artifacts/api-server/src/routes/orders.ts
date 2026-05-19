@@ -12,6 +12,7 @@ import {
   UpdateOrderResponse,
   GetOrderStatsResponse,
 } from "@workspace/api-zod";
+import { getAuthenticatedUser } from "../lib/auth";
 import { sendPush } from "../lib/push";
 
 const router: IRouter = Router();
@@ -48,25 +49,33 @@ router.get("/orders", async (req, res): Promise<void> => {
     return;
   }
 
-  let query = db.select().from(ordersTable).orderBy(sql`${ordersTable.createdAt} desc`);
-  const rows = await query;
+  const rows = await db
+    .select()
+    .from(ordersTable)
+    .orderBy(sql`${ordersTable.createdAt} desc`);
 
   let filtered = rows;
   if (params.data.status) {
-    filtered = filtered.filter((o) => o.status === params.data.status);
+    filtered = filtered.filter((order) => order.status === params.data.status);
   }
 
-  const mapped = filtered.map((o) => ({
-    ...o,
-    total: parseFloat(o.total),
-    createdAt: o.createdAt.toISOString(),
-    updatedAt: o.updatedAt.toISOString(),
+  const mapped = filtered.map((order) => ({
+    ...order,
+    total: parseFloat(order.total),
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
   }));
 
   res.json(ListOrdersResponse.parse(mapped));
 });
 
 router.post("/orders", async (req, res): Promise<void> => {
+  const authUser = await getAuthenticatedUser(req);
+  if (!authUser) {
+    res.status(401).json({ error: "Please register or log in before placing an order." });
+    return;
+  }
+
   const parsed = CreateOrderBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -74,14 +83,15 @@ router.post("/orders", async (req, res): Promise<void> => {
   }
 
   const { items, customerName, customerNote, customerPushSubscription } = parsed.data;
+  const resolvedCustomerName = customerName?.trim() || authUser.fullName;
 
-  const productIds = items.map((i) => i.productId);
+  const productIds = items.map((item) => item.productId);
   const products = await db
     .select()
     .from(productsTable)
     .where(sql`${productsTable.id} = ANY(${productIds})`);
 
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = new Map(products.map((product) => [product.id, product]));
 
   for (const item of items) {
     const product = productMap.get(item.productId);
@@ -89,10 +99,12 @@ router.post("/orders", async (req, res): Promise<void> => {
       res.status(400).json({ error: `Product ${item.productId} not found` });
       return;
     }
+
     if (!product.available) {
       res.status(400).json({ error: `Product "${product.name}" is not available` });
       return;
     }
+
     if (product.stock < item.quantity) {
       res.status(400).json({
         error: `Insufficient stock for "${product.name}". Available: ${product.stock}, requested: ${item.quantity}`,
@@ -111,12 +123,12 @@ router.post("/orders", async (req, res): Promise<void> => {
     };
   });
 
-  const total = orderItems.reduce((sum, i) => sum + i.price * i.quantity, 0);
+  const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const [order] = await db
     .insert(ordersTable)
     .values({
-      customerName: customerName ?? null,
+      customerName: resolvedCustomerName,
       customerNote: customerNote ?? null,
       status: "pending",
       total: String(total),
@@ -128,6 +140,7 @@ router.post("/orders", async (req, res): Promise<void> => {
   for (const item of items) {
     const product = productMap.get(item.productId)!;
     const newStock = product.stock - item.quantity;
+
     await db
       .update(productsTable)
       .set({
@@ -137,14 +150,13 @@ router.post("/orders", async (req, res): Promise<void> => {
       .where(eq(productsTable.id, item.productId));
   }
 
-  // Notify all admin push subscribers of the new order
   const adminSubs = await db.select().from(pushSubscriptionsTable);
   for (const sub of adminSubs) {
     await sendPush(
       { endpoint: sub.endpoint, keys: sub.keys },
       {
         title: "New Order",
-        body: `Order #${order.id} from ${customerName ?? "Guest"} — R${total.toFixed(2)}`,
+        body: `Order #${order.id} from ${resolvedCustomerName} - R${total.toFixed(2)}`,
         tag: `order-${order.id}`,
         url: "/admin/orders",
       },
@@ -208,7 +220,6 @@ router.patch("/orders/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  // If marked ready, notify the customer
   if (parsed.data.status === "ready" && updated.customerPushSubscription) {
     await sendPush(updated.customerPushSubscription, {
       title: "Your order is ready!",

@@ -1,5 +1,6 @@
 import { ensureDefaultCatalog } from "@workspace/db/catalog-seed";
 import app from "./app";
+import { ensureAuthStorage } from "./lib/auth";
 import { logger } from "./lib/logger";
 
 const rawPort = process.env["PORT"];
@@ -17,6 +18,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 async function start() {
+  await ensureAuthStorage();
   const catalog = await ensureDefaultCatalog();
 
   if (catalog.seeded) {

@@ -44,12 +44,24 @@ const clientDistDir = path.resolve(
   "public",
 );
 const clientIndexPath = path.join(clientDistDir, "index.html");
+const clientIndexTemplate = fs.existsSync(clientIndexPath)
+  ? fs.readFileSync(clientIndexPath, "utf8")
+  : null;
 
-if (fs.existsSync(clientIndexPath)) {
+if (clientIndexTemplate) {
   app.use(express.static(clientDistDir, { index: false }));
 
-  app.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => {
-    res.sendFile(clientIndexPath);
+  app.get(/^(?!\/api(?:\/|$)).*/, (req, res) => {
+    const manifestHref = req.path.startsWith("/admin")
+      ? "/admin-manifest.json"
+      : "/shop-manifest.json";
+
+    const html = clientIndexTemplate.replace(
+      /href="[^"]*manifest[^"]*"/,
+      `href="${manifestHref}"`,
+    );
+
+    res.type("html").send(html);
   });
 } else {
   logger.warn(

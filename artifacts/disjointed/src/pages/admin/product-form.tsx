@@ -102,20 +102,40 @@ export default function AdminProductForm() {
 
     setIsUploading(true);
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        const base64Data = reader.result as string;
-        const res = await uploadImage.mutateAsync({
-          data: { imageData: base64Data }
-        });
-        setFormData(prev => ({ ...prev, imageUrl: res.url }));
-        toast({ title: "Image uploaded successfully" });
-      };
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            resolve(reader.result);
+            return;
+          }
+
+          reject(new Error("Could not read the selected image."));
+        };
+
+        reader.onerror = () => {
+          reject(reader.error ?? new Error("Could not read the selected image."));
+        };
+
+        reader.readAsDataURL(file);
+      });
+
+      const res = await uploadImage.mutateAsync({
+        data: { imageData: base64Data }
+      });
+
+      setFormData(prev => ({ ...prev, imageUrl: res.url }));
+      toast({ title: "Image uploaded successfully" });
     } catch (error) {
-      toast({ title: "Failed to upload image", variant: "destructive" });
+      toast({
+        title: "Failed to upload image",
+        description: error instanceof Error ? error.message : "Please try a different image and save again.",
+        variant: "destructive",
+      });
     } finally {
       setIsUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -153,7 +173,11 @@ export default function AdminProductForm() {
       queryClient.invalidateQueries({ queryKey: getListProductsQueryKey() });
       setLocation("/admin/products");
     } catch (error) {
-      toast({ title: "Error saving product", variant: "destructive" });
+      toast({
+        title: "Error saving product",
+        description: error instanceof Error ? error.message : "Please check the product details and try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -195,7 +219,7 @@ export default function AdminProductForm() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="price" className="text-xs uppercase font-mono tracking-widest text-muted-foreground">Price ($) *</Label>
+                  <Label htmlFor="price" className="text-xs uppercase font-mono tracking-widest text-muted-foreground">Price (R) *</Label>
                   <Input id="price" name="price" type="number" step="0.01" min="0" value={formData.price} onChange={handleInputChange} required className="font-mono bg-background/50" />
                 </div>
                 <div className="space-y-2">

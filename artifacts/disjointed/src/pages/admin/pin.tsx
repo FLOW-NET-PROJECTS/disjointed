@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Delete } from "lucide-react";
+import { InstallWrapperButton } from "@/components/install-wrapper-button";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useManifest } from "@/hooks/use-manifest";
+import { setAdminUnlocked } from "@/lib/admin-access";
 import logoUrl from "@assets/logo.jpg";
 
 const ADMIN_ACCESS_CODE = "2026";
 
 export default function AdminPin() {
+  useManifest("admin");
   const [pin, setPin] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -26,7 +30,7 @@ export default function AdminPin() {
     if (e) e.preventDefault();
     
     if (pin === ADMIN_ACCESS_CODE) {
-      sessionStorage.setItem("disjointed_admin_unlocked", "true");
+      setAdminUnlocked(true);
       setLocation("/admin/dashboard");
       toast({
         title: "Access Granted",
@@ -106,6 +110,10 @@ export default function AdminPin() {
           </div>
           
           <div className="mt-8 text-center">
+            <InstallWrapperButton
+              variant="admin"
+              className="w-full font-mono uppercase tracking-widest text-xs mb-3"
+            />
             <Button 
               variant="link" 
               onClick={() => setLocation("/")}

@@ -1,9 +1,12 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "@/components/auth-provider";
+import { ProtectedRoute } from "@/components/protected-route";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import Home from "@/pages/home";
+import AuthPage from "@/pages/auth";
 import ProductDetail from "@/pages/product-detail";
 import Cart from "@/pages/cart";
 import Orders from "@/pages/orders";
@@ -22,9 +25,22 @@ function Router() {
     <Switch>
       {/* Shop Routes */}
       <Route path="/" component={Home} />
-      <Route path="/product/:id" component={ProductDetail} />
-      <Route path="/cart" component={Cart} />
-      <Route path="/orders" component={Orders} />
+      <Route path="/auth" component={AuthPage} />
+      <Route path="/product/:id">
+        <ProtectedRoute>
+          <ProductDetail />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/cart">
+        <ProtectedRoute mode="login">
+          <Cart />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/orders">
+        <ProtectedRoute mode="login">
+          <Orders />
+        </ProtectedRoute>
+      </Route>
       
       {/* Admin Routes */}
       <Route path="/admin" component={AdminPin} />
@@ -43,12 +59,14 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

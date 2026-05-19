@@ -1,0 +1,25 @@
+{
+  "id": "/?wrapper=shop",
+  "name": "DISJOINTED Shop",
+  "short_name": "DISJOINTED",
+  "description": "Browse DISJOINTED and order for pickup in South African Rand.",
+  "theme_color": "#1a1f1a",
+  "background_color": "#111411",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/?wrapper=shop",
+  "icons": [
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    }
+  ]
+}

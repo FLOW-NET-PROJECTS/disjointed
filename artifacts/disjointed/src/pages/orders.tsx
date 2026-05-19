@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useState } from "react";
 import { format } from "date-fns";
-import { CheckCircle2, Search, Clock, ShieldAlert, ArrowRight, CheckSquare } from "lucide-react";
-import { useGetOrder, useListOrders } from "@workspace/api-client-react";
+import { CheckCircle2, Search, Clock, ShieldAlert, CheckSquare } from "lucide-react";
+import { useGetOrder } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 
 export default function Orders() {
-  const [location] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   const initialOrderId = searchParams.get("id");
   

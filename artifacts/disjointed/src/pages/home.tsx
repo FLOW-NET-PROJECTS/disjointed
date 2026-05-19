@@ -60,7 +60,7 @@ export default function Home() {
         </h1>
         <p className="text-muted-foreground/70 font-mono max-w-md mx-auto text-xs leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
           Handpicked flower, extracts & edibles for the discerning.<br />
-          Browse the latest drops and collect when you're ready.
+          Browse the latest drops, then register or log in to unlock products and checkout.
         </p>
 
         <div className="mt-10 flex justify-center gap-6 animate-in fade-in duration-700 delay-200">

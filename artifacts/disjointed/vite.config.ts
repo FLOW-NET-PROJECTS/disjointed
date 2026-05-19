@@ -28,7 +28,8 @@ export default defineConfig({
       filename: "service-worker.ts",
       includeAssets: ["favicon.svg", "icon-512.jpg"],
       manifest: {
-        name: "DISJOINTED",
+        id: `${basePath}?wrapper=shop`,
+        name: "DISJOINTED Shop",
         short_name: "DISJOINTED",
         description: "Premium cannabis shop — order for pickup",
         theme_color: "#1a1f1a",
@@ -36,7 +37,7 @@ export default defineConfig({
         display: "standalone",
         orientation: "portrait",
         scope: basePath,
-        start_url: basePath,
+        start_url: `${basePath}?wrapper=shop`,
         icons: [
           {
             src: `${basePath}icon-512.jpg`,

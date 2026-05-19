@@ -1,9 +1,10 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { ShoppingCart, Leaf } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
+import { buildAuthPath } from "@/lib/auth";
 import type { Product } from "@workspace/api-client-react";
 
 interface ProductCardProps {
@@ -21,10 +22,26 @@ const DEFAULT_STYLE = { badge: "bg-muted text-muted-foreground border-border", g
 
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCart((state) => state.addItem);
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  const productHref = user
+    ? `/product/${product.id}`
+    : buildAuthPath(`/product/${product.id}`, "register");
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "Register to open products",
+        description: "Create an account or log in before adding items to your stash.",
+      });
+      setLocation(buildAuthPath(`/product/${product.id}`, "register"));
+      return;
+    }
+
     addItem(product, 1);
     toast({
       title: "Added to cart",
@@ -37,7 +54,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const outOfStock = !product.available || (product.stock != null && product.stock <= 0);
 
   return (
-    <Link href={`/product/${product.id}`} className="group block h-full">
+    <Link href={productHref} className="group block h-full">
       <div
         className={`relative h-full rounded-2xl border border-white/8 bg-white/[0.03] backdrop-blur-sm overflow-hidden flex flex-col transition-all duration-300 hover:border-white/15 hover:bg-white/[0.055] ${style.glow}`}
       >

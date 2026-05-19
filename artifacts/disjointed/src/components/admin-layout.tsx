@@ -8,7 +8,9 @@ import {
   ChevronLeft
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { InstallWrapperButton } from "@/components/install-wrapper-button";
 import { useManifest } from "@/hooks/use-manifest";
+import { setAdminUnlocked } from "@/lib/admin-access";
 import logoUrl from "@assets/logo.jpg";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -16,7 +18,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
 
   const handleLogout = () => {
-    sessionStorage.removeItem("disjointed_admin_unlocked");
+    setAdminUnlocked(false);
     setLocation("/admin");
   };
 
@@ -63,6 +65,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </div>
         
         <div className="p-4 border-t border-border mt-auto flex flex-col gap-2">
+          <InstallWrapperButton
+            variant="admin"
+            className="w-full justify-start font-mono uppercase tracking-widest text-xs"
+          />
           <Link href="/" className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             <ChevronLeft className="w-4 h-4" />
             Back to Shop

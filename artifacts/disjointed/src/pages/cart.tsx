@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Trash2, ShoppingBag, ChevronLeft, Bell } from "lucide-react";
 import { useCreateOrder, useGetVapidPublicKey } from "@workspace/api-client-react";
+import { useAuth } from "@/components/auth-provider";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/hooks/use-cart";
@@ -15,39 +15,39 @@ import { Separator } from "@/components/ui/separator";
 export default function Cart() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const { items, updateQuantity, removeItem, getCartTotal, getOrderItems, clearCart } = useCart();
   const { status: pushStatus, requestAndSubscribe } = usePushNotifications();
   const { data: vapidData } = useGetVapidPublicKey();
-
-  const [customerName, setCustomerName] = useState("");
   const [customerNote, setCustomerNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createOrder = useCreateOrder();
 
-  const handleCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (items.length === 0) return;
-
-    if (!customerName.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please provide a name for your order pickup.",
-        variant: "destructive"
-      });
+  const handleCheckout = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (items.length === 0 || !user) {
       return;
     }
 
     setIsSubmitting(true);
 
-    let customerPushSubscription: any = undefined;
+    let customerPushSubscription: {
+      endpoint: string;
+      expirationTime?: number | null;
+      keys: { p256dh: string; auth: string };
+    } | undefined;
+
     if (vapidData?.publicKey && pushStatus !== "denied" && pushStatus !== "unsupported") {
-      const sub = await requestAndSubscribe(vapidData.publicKey);
-      if (sub?.endpoint && sub?.keys) {
+      const subscription = await requestAndSubscribe(vapidData.publicKey);
+      if (subscription?.endpoint && subscription?.keys) {
         customerPushSubscription = {
-          endpoint: sub.endpoint,
-          expirationTime: sub.expirationTime ?? null,
-          keys: { p256dh: (sub.keys as any).p256dh, auth: (sub.keys as any).auth },
+          endpoint: subscription.endpoint,
+          expirationTime: subscription.expirationTime ?? null,
+          keys: {
+            p256dh: (subscription.keys as { p256dh: string }).p256dh,
+            auth: (subscription.keys as { auth: string }).auth,
+          },
         };
       }
     }
@@ -55,11 +55,11 @@ export default function Cart() {
     try {
       const order = await createOrder.mutateAsync({
         data: {
-          customerName,
+          customerName: user.fullName,
           customerNote: customerNote || undefined,
           items: getOrderItems(),
           customerPushSubscription,
-        }
+        },
       });
 
       clearCart();
@@ -71,8 +71,8 @@ export default function Cart() {
     } catch (error) {
       toast({
         title: "Order failed",
-        description: "There was a problem placing your order. Please try again.",
-        variant: "destructive"
+        description: error instanceof Error ? error.message : "There was a problem placing your order.",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
@@ -93,7 +93,10 @@ export default function Cart() {
             Browse our collection of premium flower, edibles, and extracts to start your order.
           </p>
           <Link href="/">
-            <Button size="lg" className="font-mono uppercase tracking-widest"><ChevronLeft className="w-4 h-4 mr-2" /> Start Shopping</Button>
+            <Button size="lg" className="font-mono uppercase tracking-widest">
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Start Shopping
+            </Button>
           </Link>
         </div>
       </Layout>
@@ -104,7 +107,9 @@ export default function Cart() {
     <Layout>
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold tracking-tighter uppercase">Your Stash</h1>
-        <p className="text-muted-foreground font-mono text-sm mt-2">Review your items before checkout.</p>
+        <p className="text-muted-foreground font-mono text-sm mt-2">
+          Review your items before checkout.
+        </p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-10">
@@ -146,12 +151,16 @@ export default function Cart() {
                     <button
                       className="px-2 py-1 text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                    >-</button>
+                    >
+                      -
+                    </button>
                     <span className="font-mono text-sm w-6 text-center">{item.quantity}</span>
                     <button
                       className="px-2 py-1 text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    >+</button>
+                    >
+                      +
+                    </button>
                   </div>
 
                   <div className="col-span-2 w-full flex items-center justify-between md:justify-end">
@@ -176,7 +185,8 @@ export default function Cart() {
           <div className="flex justify-between items-center">
             <Link href="/">
               <Button variant="outline" className="font-mono text-xs uppercase tracking-widest">
-                <ChevronLeft className="w-3 h-3 mr-2" /> Continue Shopping
+                <ChevronLeft className="w-3 h-3 mr-2" />
+                Continue Shopping
               </Button>
             </Link>
             <Button variant="ghost" onClick={clearCart} className="text-muted-foreground hover:text-destructive text-sm font-mono">
@@ -206,24 +216,25 @@ export default function Cart() {
             </div>
 
             <form onSubmit={handleCheckout} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Pickup Name *</Label>
-                <Input
-                  id="name"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder="Enter name for pickup"
-                  className="bg-background/50 border-border font-mono placeholder:text-muted-foreground/30 focus-visible:ring-primary"
-                  required
-                />
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary/70">
+                  Registered Customer
+                </p>
+                <div className="text-sm">
+                  <p className="font-semibold">{user?.fullName}</p>
+                  <p className="text-muted-foreground font-mono">{user?.username}</p>
+                  <p className="text-muted-foreground font-mono">ID {user?.idNumber}</p>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="note" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">Order Notes (Optional)</Label>
+                <Label htmlFor="note" className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                  Order Notes (Optional)
+                </Label>
                 <Textarea
                   id="note"
                   value={customerNote}
-                  onChange={(e) => setCustomerNote(e.target.value)}
+                  onChange={(event) => setCustomerNote(event.target.value)}
                   placeholder="Any special instructions?"
                   className="bg-background/50 border-border font-mono placeholder:text-muted-foreground/30 min-h-24 resize-none focus-visible:ring-primary"
                 />
@@ -243,12 +254,12 @@ export default function Cart() {
               <Button
                 type="submit"
                 className="w-full mt-6 h-12 font-mono uppercase tracking-widest font-bold"
-                disabled={isSubmitting || items.length === 0 || !customerName.trim()}
+                disabled={isSubmitting || items.length === 0 || !user}
               >
                 {isSubmitting ? "Placing order..." : "Place Order"}
               </Button>
               <p className="text-[10px] text-muted-foreground text-center font-mono mt-4 uppercase tracking-wider opacity-70">
-                Pay in-store upon pickup
+                Bring your ID when collecting and paying in store
               </p>
             </form>
           </div>
