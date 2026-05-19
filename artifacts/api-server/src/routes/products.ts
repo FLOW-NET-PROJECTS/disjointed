@@ -16,6 +16,76 @@ import {
 
 const router: IRouter = Router();
 
+function normalizeOptionalString(value: unknown) {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  return trimmed === "" ? undefined : trimmed;
+}
+
+function normalizeOptionalNumber(value: unknown) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+  if (trimmed === "") {
+    return undefined;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : value;
+}
+
+function normalizeOptionalBoolean(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  if (value === "true") {
+    return true;
+  }
+
+  if (value === "false") {
+    return false;
+  }
+
+  return value;
+}
+
+function normalizeProductBody(body: unknown) {
+  if (!body || typeof body !== "object") {
+    return body;
+  }
+
+  const source = body as Record<string, unknown>;
+
+  return {
+    ...source,
+    name: normalizeOptionalString(source.name),
+    description: normalizeOptionalString(source.description),
+    price: normalizeOptionalNumber(source.price),
+    thcLevel: normalizeOptionalNumber(source.thcLevel),
+    cbdLevel: normalizeOptionalNumber(source.cbdLevel),
+    strain: normalizeOptionalString(source.strain),
+    weight: normalizeOptionalString(source.weight),
+    imageUrl: normalizeOptionalString(source.imageUrl),
+    available: normalizeOptionalBoolean(source.available),
+    categoryId: normalizeOptionalNumber(source.categoryId),
+    stock: normalizeOptionalNumber(source.stock),
+  };
+}
+
 router.get("/products/stats", async (req, res): Promise<void> => {
   const [totals] = await db
     .select({
@@ -89,7 +159,7 @@ router.get("/products", async (req, res): Promise<void> => {
 });
 
 router.post("/products", async (req, res): Promise<void> => {
-  const parsed = CreateProductBody.safeParse(req.body);
+  const parsed = CreateProductBody.safeParse(normalizeProductBody(req.body));
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;
@@ -200,7 +270,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const parsed = UpdateProductBody.safeParse(req.body);
+  const parsed = UpdateProductBody.safeParse(normalizeProductBody(req.body));
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;

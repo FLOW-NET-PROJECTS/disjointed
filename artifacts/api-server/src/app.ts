@@ -61,6 +61,7 @@ if (clientIndexTemplate) {
       `href="${manifestHref}"`,
     );
 
+    res.setHeader("Cache-Control", "no-store, max-age=0, must-revalidate");
     res.type("html").send(html);
   });
 } else {
