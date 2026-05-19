@@ -1,3 +1,4 @@
+import { ensureDefaultCatalog } from "@workspace/db/catalog-seed";
 import app from "./app";
 import { logger } from "./lib/logger";
 
@@ -15,11 +16,26 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
+async function start() {
+  const catalog = await ensureDefaultCatalog();
+
+  if (catalog.seeded) {
+    logger.info(catalog, "Seeded default catalog for empty database");
+  } else {
+    logger.info(catalog, "Catalog already populated; skipping default seed");
   }
 
-  logger.info({ port }, "Server listening");
+  app.listen(port, (err) => {
+    if (err) {
+      logger.error({ err }, "Error listening on port");
+      process.exit(1);
+    }
+
+    logger.info({ port }, "Server listening");
+  });
+}
+
+start().catch((err) => {
+  logger.error({ err }, "Server startup failed");
+  process.exit(1);
 });

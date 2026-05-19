@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { ShieldAlert, Delete } from "lucide-react";
+import { Delete } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import logoUrl from "@assets/logo.jpg";
+
+const ADMIN_ACCESS_CODE = "2026";
 
 export default function AdminPin() {
   const [pin, setPin] = useState("");
@@ -23,7 +25,7 @@ export default function AdminPin() {
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    if (pin === "2026") {
+    if (pin === ADMIN_ACCESS_CODE) {
       sessionStorage.setItem("disjointed_admin_unlocked", "true");
       setLocation("/admin/dashboard");
       toast({
@@ -40,10 +42,17 @@ export default function AdminPin() {
     }
   };
 
-  // Auto-submit when 4 digits are entered
-  if (pin.length === 4) {
-    setTimeout(() => handleSubmit(), 100);
-  }
+  useEffect(() => {
+    if (pin.length !== 4) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      handleSubmit();
+    }, 100);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [pin]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 selection:bg-primary/30 relative overflow-hidden">

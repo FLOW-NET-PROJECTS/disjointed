@@ -5,6 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./catalog-seed": "./src/catalog-seed.ts",
+    "./client": "./src/client.ts",
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {
