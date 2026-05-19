@@ -13,6 +13,7 @@ import {
   GetOrderStatsResponse,
 } from "@workspace/api-zod";
 import { getAuthenticatedUser } from "../lib/auth";
+import { logger } from "../lib/logger";
 import { sendPush } from "../lib/push";
 
 const router: IRouter = Router();
@@ -150,16 +151,23 @@ router.post("/orders", async (req, res): Promise<void> => {
       .where(eq(productsTable.id, item.productId));
   }
 
-  const adminSubs = await db.select().from(pushSubscriptionsTable);
-  for (const sub of adminSubs) {
-    await sendPush(
-      { endpoint: sub.endpoint, keys: sub.keys },
-      {
-        title: "New Order",
-        body: `Order #${order.id} from ${resolvedCustomerName} - R${total.toFixed(2)}`,
-        tag: `order-${order.id}`,
-        url: "/admin/orders",
-      },
+  try {
+    const adminSubs = await db.select().from(pushSubscriptionsTable);
+    for (const sub of adminSubs) {
+      await sendPush(
+        { endpoint: sub.endpoint, keys: sub.keys },
+        {
+          title: "New Order",
+          body: `Order #${order.id} from ${resolvedCustomerName} - R${total.toFixed(2)}`,
+          tag: `order-${order.id}`,
+          url: "/admin/orders",
+        },
+      );
+    }
+  } catch (error) {
+    logger.warn(
+      { err: error instanceof Error ? error.message : String(error), orderId: order.id },
+      "Skipping admin order push delivery after storage lookup failure",
     );
   }
 
