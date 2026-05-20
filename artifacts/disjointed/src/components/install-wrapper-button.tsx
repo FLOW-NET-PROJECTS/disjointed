@@ -10,12 +10,48 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { isWrapperMode } from "@/lib/auth";
+import { isStandaloneWrapperMode } from "@/lib/auth";
 
 type DeferredInstallPrompt = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
 };
+
+let cachedInstallPrompt: DeferredInstallPrompt | null = null;
+let installPromptMonitoringReady = false;
+const installPromptSubscribers = new Set<
+  (prompt: DeferredInstallPrompt | null) => void
+>();
+
+function notifyInstallPromptSubscribers(prompt: DeferredInstallPrompt | null) {
+  installPromptSubscribers.forEach((listener) => listener(prompt));
+}
+
+function ensureInstallPromptMonitoring() {
+  if (installPromptMonitoringReady || typeof window === "undefined") {
+    return;
+  }
+
+  installPromptMonitoringReady = true;
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    cachedInstallPrompt = event as DeferredInstallPrompt;
+    notifyInstallPromptSubscribers(cachedInstallPrompt);
+  });
+
+  window.addEventListener("appinstalled", () => {
+    cachedInstallPrompt = null;
+    notifyInstallPromptSubscribers(null);
+  });
+}
+
+function subscribeToInstallPrompt(
+  listener: (prompt: DeferredInstallPrompt | null) => void,
+) {
+  installPromptSubscribers.add(listener);
+  return () => installPromptSubscribers.delete(listener);
+}
 
 export function InstallWrapperButton({
   variant,
@@ -30,24 +66,23 @@ export function InstallWrapperButton({
   const { toast } = useToast();
 
   useEffect(() => {
-    setInstalled(isWrapperMode());
+    ensureInstallPromptMonitoring();
+    setInstalled(isStandaloneWrapperMode());
+    setDeferredPrompt(cachedInstallPrompt);
 
-    const handleBeforeInstallPrompt = (event: Event) => {
-      event.preventDefault();
-      setDeferredPrompt(event as DeferredInstallPrompt);
-    };
+    const unsubscribe = subscribeToInstallPrompt(setDeferredPrompt);
 
     const handleInstalled = () => {
-      setInstalled(true);
-      setDeferredPrompt(null);
+      setInstalled(isStandaloneWrapperMode());
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     window.addEventListener("appinstalled", handleInstalled);
+    window.addEventListener("focus", handleInstalled);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      unsubscribe();
       window.removeEventListener("appinstalled", handleInstalled);
+      window.removeEventListener("focus", handleInstalled);
     };
   }, []);
 

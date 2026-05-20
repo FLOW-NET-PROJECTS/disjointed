@@ -21,6 +21,25 @@ type AuthMode = "login" | "register";
 const LOCAL_AUTH_STORAGE_KEY = "disjointed_user_auth_local";
 const SESSION_AUTH_STORAGE_KEY = "disjointed_user_auth_session";
 
+function hasWrapperQueryParam() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return new URLSearchParams(window.location.search).has("wrapper");
+}
+
+export function isStandaloneWrapperMode() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
 function getApiErrorMessage(data: ApiErrorPayload | null, fallback: string) {
   return data?.error || data?.message || fallback;
 }
@@ -49,16 +68,7 @@ async function authRequest<T>(path: string, init: RequestInit): Promise<T> {
 }
 
 export function isWrapperMode() {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  const params = new URLSearchParams(window.location.search);
-  const displayModeStandalone =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-  return displayModeStandalone || params.has("wrapper");
+  return isStandaloneWrapperMode() || hasWrapperQueryParam();
 }
 
 function getActiveStorage() {
