@@ -86,10 +86,6 @@ export function InstallWrapperButton({
     };
   }, []);
 
-  if (installed) {
-    return null;
-  }
-
   const label = variant === "admin" ? "Install Admin App" : "Install Shop App";
   const installPagePath = variant === "admin" ? "/admin" : "/";
   const installUrl =
@@ -170,6 +166,10 @@ export function InstallWrapperButton({
 
     setDeferredPrompt(null);
   };
+
+  if (installed) {
+    return null;
+  }
 
   return (
     <>
