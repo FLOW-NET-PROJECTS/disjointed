@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { db, ordersTable, productsTable, pushSubscriptionsTable } from "@workspace/db";
 import {
   ListOrdersQueryParams,
@@ -87,10 +87,15 @@ router.post("/orders", async (req, res): Promise<void> => {
   const resolvedCustomerName = customerName?.trim() || authUser.fullName;
 
   const productIds = items.map((item) => item.productId);
+  if (productIds.length === 0) {
+    res.status(400).json({ error: "An order must include at least one product." });
+    return;
+  }
+
   const products = await db
     .select()
     .from(productsTable)
-    .where(sql`${productsTable.id} = ANY(${productIds})`);
+    .where(inArray(productsTable.id, productIds));
 
   const productMap = new Map(products.map((product) => [product.id, product]));
 

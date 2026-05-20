@@ -26,15 +26,14 @@ router.post("/uploads/image", async (req, res): Promise<void> => {
   }
 
   const mimeType = matches[1];
-  const base64Data = matches[2];
-  const ext = mimeType.split("/")[1]?.replace("jpeg", "jpg") ?? "jpg";
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const filepath = path.join(UPLOADS_DIR, filename);
+  if (!mimeType.startsWith("image/")) {
+    res.status(400).json({ error: "Only image uploads are supported." });
+    return;
+  }
 
-  fs.writeFileSync(filepath, Buffer.from(base64Data, "base64"));
-
-  const url = `/api/uploads/${filename}`;
-  res.json({ url });
+  // Railway deploys run on ephemeral disk, so returning the inline data URL
+  // keeps product images durable across restarts and instance swaps.
+  res.json({ url: imageData });
 });
 
 router.get("/uploads/:filename", (req, res): void => {
@@ -46,7 +45,7 @@ router.get("/uploads/:filename", (req, res): void => {
   const sanitized = path.basename(filename);
   const filepath = path.join(UPLOADS_DIR, sanitized);
   if (!fs.existsSync(filepath)) {
-    res.status(404).json({ error: "File not found" });
+    res.redirect("/icon-512.jpg");
     return;
   }
   res.sendFile(filepath);
