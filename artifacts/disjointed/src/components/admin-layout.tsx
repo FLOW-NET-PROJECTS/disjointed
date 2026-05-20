@@ -14,7 +14,7 @@ import { setAdminUnlocked } from "@/lib/admin-access";
 import logoUrl from "@assets/logo.jpg";
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
-  useManifest("admin");
+  useManifest("shop");
   const [location, setLocation] = useLocation();
 
   const handleLogout = () => {
@@ -66,7 +66,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         
         <div className="p-4 border-t border-border mt-auto flex flex-col gap-2">
           <InstallWrapperButton
-            variant="admin"
+            variant="shop"
             className="w-full justify-start font-mono uppercase tracking-widest text-xs"
           />
           <Link href="/" className="flex items-center gap-3 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">

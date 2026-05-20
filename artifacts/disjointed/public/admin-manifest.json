@@ -1,14 +1,14 @@
 {
-  "id": "/admin?wrapper=admin",
-  "name": "DISJOINTED Admin",
-  "short_name": "DJ Admin",
-  "description": "Manage products, orders, and stock from the DISJOINTED admin portal.",
+  "id": "/?wrapper=shop",
+  "name": "DISJOINTED Shop",
+  "short_name": "DISJOINTED",
+  "description": "Browse DISJOINTED and order for pickup in South African Rand.",
   "theme_color": "#2a3a2a",
   "background_color": "#0d120d",
   "display": "standalone",
   "orientation": "portrait",
-  "scope": "/admin",
-  "start_url": "/admin?wrapper=admin",
+  "scope": "/",
+  "start_url": "/?wrapper=shop",
   "icons": [
     {
       "src": "/icon-192.png",

@@ -11,7 +11,7 @@ import logoUrl from "@assets/logo.jpg";
 const ADMIN_ACCESS_CODE = "2026";
 
 export default function AdminPin() {
-  useManifest("admin");
+  useManifest("shop");
   const [pin, setPin] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -111,7 +111,7 @@ export default function AdminPin() {
           
           <div className="mt-8 text-center">
             <InstallWrapperButton
-              variant="admin"
+              variant="shop"
               className="w-full font-mono uppercase tracking-widest text-xs mb-3"
             />
             <Button 

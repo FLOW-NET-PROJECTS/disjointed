@@ -19,9 +19,7 @@
       (function () {
         var manifestLink = document.createElement("link");
         manifestLink.rel = "manifest";
-        manifestLink.href = window.location.pathname.startsWith("/admin")
-          ? "/admin-manifest.json"
-          : "/shop-manifest.json";
+        manifestLink.href = "/shop-manifest.json";
         manifestLink.dataset.appManifest = "true";
         document.head.appendChild(manifestLink);
       })();
